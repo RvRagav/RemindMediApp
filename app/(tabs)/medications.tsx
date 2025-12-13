@@ -38,7 +38,10 @@ export default function MedicationsScreen() {
                     keyExtractor={(item) => item.id.toString()}
                     contentContainerStyle={styles.listContent}
                     renderItem={({ item }) => (
-                        <Pressable style={styles.medicineCard}>
+                        <Pressable
+                            style={styles.medicineCard}
+                            onPress={() => router.push(`/medication-details?id=${item.id}` as any)}
+                        >
                             <View style={[styles.medicineIcon, { backgroundColor: item.color || "#E3F2FD" }]}>
                                 <Ionicons name="medical" size={24} color="#1976D2" />
                             </View>

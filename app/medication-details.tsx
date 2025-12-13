@@ -1,71 +1,131 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useMedicineStore, useScheduleStore } from "../src/store";
 
 export default function MedicationDetailsScreen() {
     const router = useRouter();
+    const { id } = useLocalSearchParams<{ id: string }>();
+    const { selectedMedicine, fetchMedicineById, deleteMedicine, isLoading } = useMedicineStore();
+    const { schedules, fetchSchedules } = useScheduleStore();
+    const [medicineSchedules, setMedicineSchedules] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (id) {
+            fetchMedicineById(Number(id));
+            fetchSchedules();
+        }
+    }, [id]);
+
+    useEffect(() => {
+        if (selectedMedicine && schedules.length > 0) {
+            const filtered = schedules.filter(s => s.medicineId === selectedMedicine.id);
+            setMedicineSchedules(filtered);
+        }
+    }, [selectedMedicine, schedules]);
+
+    const handleDelete = () => {
+        Alert.alert(
+            "Delete Medication",
+            `Are you sure you want to delete ${selectedMedicine?.name}? This will also delete all associated schedules.`,
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        if (selectedMedicine) {
+                            await deleteMedicine(selectedMedicine.id);
+                            Alert.alert("Success", "Medication deleted successfully");
+                            router.back();
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleEdit = () => {
+        router.push(`/edit-medication?id=${id}` as any);
+    };
+
+    if (isLoading || !selectedMedicine) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#007AFF" />
+            </View>
+        );
+    }
 
     return (
         <ScrollView style={styles.container}>
-            <View style={styles.card}>
-                <View style={styles.iconContainer}>
-                    <Ionicons name="medical" size={48} color="#007AFF" />
-                </View>
-                <Text style={styles.medicationName}>Aspirin</Text>
-                <Text style={styles.dosage}>100mg - 1 tablet</Text>
+            {/* Header Card */}
+            <View style={[styles.headerCard, { backgroundColor: selectedMedicine.color || "#E3F2FD" }]}>
+                <Ionicons name="medical" size={60} color="#1976D2" />
+                <Text style={styles.medicineName}>{selectedMedicine.name}</Text>
+                <Text style={styles.dosage}>{selectedMedicine.dosage}</Text>
             </View>
 
+            {/* Details Section */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Instructions</Text>
-                <View style={styles.card}>
-                    <Text style={styles.instructions}>
-                        Take with food. Avoid taking on an empty stomach.
+                <Text style={styles.sectionTitle}>Details</Text>
+                <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Form:</Text>
+                    <Text style={styles.detailValue}>{selectedMedicine.form}</Text>
+                </View>
+                {selectedMedicine.instructions && (
+                    <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Instructions:</Text>
+                        <Text style={styles.detailValue}>{selectedMedicine.instructions}</Text>
+                    </View>
+                )}
+                <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Status:</Text>
+                    <Text style={[styles.detailValue, selectedMedicine.active ? styles.active : styles.inactive]}>
+                        {selectedMedicine.active ? "Active" : "Inactive"}
                     </Text>
                 </View>
             </View>
 
+            {/* Schedules Section */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Schedule</Text>
-                <View style={styles.card}>
-                    <View style={styles.scheduleItem}>
-                        <Ionicons name="time-outline" size={24} color="#666" />
-                        <View style={styles.scheduleInfo}>
-                            <Text style={styles.scheduleText}>Daily at 9:00 AM</Text>
-                            <Text style={styles.scheduleSubtext}>Every day</Text>
-                        </View>
-                    </View>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Schedules ({medicineSchedules.length})</Text>
+                    <Pressable
+                        style={styles.addScheduleBtn}
+                        onPress={() => router.push(`/add-schedule?medicineId=${id}` as any)}
+                    >
+                        <Ionicons name="add-circle" size={24} color="#007AFF" />
+                    </Pressable>
                 </View>
+                {medicineSchedules.length === 0 ? (
+                    <Text style={styles.emptyText}>No schedules set for this medication</Text>
+                ) : (
+                    medicineSchedules.map((schedule) => (
+                        <View key={schedule.id} style={styles.scheduleCard}>
+                            <View style={styles.scheduleInfo}>
+                                <Ionicons name="time-outline" size={20} color="#666" />
+                                <Text style={styles.scheduleTime}>{schedule.time}</Text>
+                                <Text style={styles.scheduleRecurrence}>{schedule.recurrence}</Text>
+                            </View>
+                            <Pressable onPress={() => router.push(`/edit-schedule?id=${schedule.id}` as any)}>
+                                <Ionicons name="chevron-forward" size={20} color="#999" />
+                            </Pressable>
+                        </View>
+                    ))
+                )}
             </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>History</Text>
-                <View style={styles.card}>
-                    <View style={styles.historyItem}>
-                        <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-                        <View style={styles.historyInfo}>
-                            <Text style={styles.historyText}>Taken</Text>
-                            <Text style={styles.historyDate}>Today at 9:05 AM</Text>
-                        </View>
-                    </View>
-                    <View style={styles.divider} />
-                    <View style={styles.historyItem}>
-                        <Ionicons name="close-circle" size={24} color="#F44336" />
-                        <View style={styles.historyInfo}>
-                            <Text style={styles.historyText}>Skipped</Text>
-                            <Text style={styles.historyDate}>Yesterday at 9:00 AM</Text>
-                        </View>
-                    </View>
-                </View>
-            </View>
-
-            <View style={styles.buttonContainer}>
-                <Pressable style={[styles.button, styles.editButton]}>
-                    <Ionicons name="create-outline" size={20} color="#007AFF" />
-                    <Text style={[styles.buttonText, { color: "#007AFF" }]}>Edit</Text>
+            {/* Action Buttons */}
+            <View style={styles.actionContainer}>
+                <Pressable style={[styles.actionBtn, styles.editBtn]} onPress={handleEdit}>
+                    <Ionicons name="create-outline" size={20} color="#fff" />
+                    <Text style={styles.actionBtnText}>Edit</Text>
                 </Pressable>
-                <Pressable style={[styles.button, styles.deleteButton]}>
-                    <Ionicons name="trash-outline" size={20} color="#F44336" />
-                    <Text style={[styles.buttonText, { color: "#F44336" }]}>Delete</Text>
+                <Pressable style={[styles.actionBtn, styles.deleteBtn]} onPress={handleDelete}>
+                    <Ionicons name="trash-outline" size={20} color="#fff" />
+                    <Text style={styles.actionBtnText}>Delete</Text>
                 </Pressable>
             </View>
         </ScrollView>
@@ -77,123 +137,127 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#f5f5f5",
     },
-    card: {
-        backgroundColor: "#fff",
-        marginHorizontal: 20,
-        marginTop: 20,
-        padding: 20,
-        borderRadius: 12,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    iconContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: "#E3F2FD",
+    loadingContainer: {
+        flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        alignSelf: "center",
-        marginBottom: 16,
     },
-    medicationName: {
-        fontSize: 24,
+    headerCard: {
+        padding: 30,
+        alignItems: "center",
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+    },
+    medicineName: {
+        fontSize: 28,
         fontWeight: "bold",
-        textAlign: "center",
-        marginBottom: 8,
-        color: "#333",
+        color: "#1976D2",
+        marginTop: 15,
     },
     dosage: {
-        fontSize: 16,
-        color: "#666",
-        textAlign: "center",
+        fontSize: 18,
+        color: "#424242",
+        marginTop: 5,
     },
     section: {
-        marginTop: 8,
+        backgroundColor: "#fff",
+        margin: 15,
+        padding: 20,
+        borderRadius: 15,
+    },
+    sectionHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 15,
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: "600",
-        marginHorizontal: 20,
-        marginBottom: -8,
+        fontWeight: "bold",
         color: "#333",
+        marginBottom: 15,
     },
-    instructions: {
-        fontSize: 16,
-        lineHeight: 24,
-        color: "#333",
-    },
-    scheduleItem: {
+    detailRow: {
         flexDirection: "row",
+        justifyContent: "space-between",
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#f0f0f0",
+    },
+    detailLabel: {
+        fontSize: 15,
+        color: "#666",
+        fontWeight: "500",
+    },
+    detailValue: {
+        fontSize: 15,
+        color: "#333",
+        flex: 1,
+        textAlign: "right",
+    },
+    active: {
+        color: "#4CAF50",
+        fontWeight: "600",
+    },
+    inactive: {
+        color: "#999",
+    },
+    addScheduleBtn: {
+        padding: 5,
+    },
+    emptyText: {
+        textAlign: "center",
+        color: "#999",
+        fontSize: 14,
+        paddingVertical: 20,
+    },
+    scheduleCard: {
+        flexDirection: "row",
+        justifyContent: "space-between",
         alignItems: "center",
+        padding: 15,
+        backgroundColor: "#f8f8f8",
+        borderRadius: 10,
+        marginBottom: 10,
     },
     scheduleInfo: {
-        marginLeft: 12,
-        flex: 1,
-    },
-    scheduleText: {
-        fontSize: 16,
-        fontWeight: "500",
-        marginBottom: 4,
-        color: "#333",
-    },
-    scheduleSubtext: {
-        fontSize: 14,
-        color: "#666",
-    },
-    historyItem: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 8,
+        gap: 10,
     },
-    historyInfo: {
-        marginLeft: 12,
-        flex: 1,
-    },
-    historyText: {
+    scheduleTime: {
         fontSize: 16,
-        fontWeight: "500",
-        marginBottom: 4,
+        fontWeight: "600",
         color: "#333",
     },
-    historyDate: {
+    scheduleRecurrence: {
         fontSize: 14,
         color: "#666",
+        textTransform: "capitalize",
     },
-    divider: {
-        height: 1,
-        backgroundColor: "#e0e0e0",
-        marginVertical: 12,
-    },
-    buttonContainer: {
+    actionContainer: {
         flexDirection: "row",
-        marginHorizontal: 20,
-        marginTop: 20,
-        marginBottom: 40,
-        gap: 12,
+        gap: 15,
+        padding: 15,
+        marginBottom: 30,
     },
-    button: {
+    actionBtn: {
         flex: 1,
         flexDirection: "row",
-        padding: 16,
-        borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
+        paddingVertical: 15,
+        borderRadius: 10,
         gap: 8,
-        borderWidth: 1,
     },
-    editButton: {
-        backgroundColor: "#E3F2FD",
-        borderColor: "#007AFF",
+    editBtn: {
+        backgroundColor: "#007AFF",
     },
-    deleteButton: {
-        backgroundColor: "#FFEBEE",
-        borderColor: "#F44336",
+    deleteBtn: {
+        backgroundColor: "#FF3B30",
     },
-    buttonText: {
+    actionBtnText: {
+        color: "#fff",
         fontSize: 16,
         fontWeight: "600",
     },
