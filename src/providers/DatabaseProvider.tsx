@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { database } from '../database';
+import { notificationService } from '../services/notificationService';
 
 interface DatabaseContextType {
     isReady: boolean;
@@ -25,6 +26,8 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
         const initDatabase = async () => {
             try {
                 await database.init();
+                // Request notification permissions on app start
+                await notificationService.requestPermissions();
                 setIsReady(true);
             } catch (err) {
                 console.error('Database initialization failed:', err);

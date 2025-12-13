@@ -12,6 +12,7 @@ import {
     Text,
     View
 } from "react-native";
+import { notificationService } from "../services/notificationService";
 import { useMedicineStore, useScheduleStore } from "../store";
 import { RecurrenceType } from "../types";
 
@@ -79,6 +80,24 @@ export default function AddScheduleForm() {
             const startDateString = formData.startDate.toISOString().split("T")[0];
             const endDateString = formData.endDate ? formData.endDate.toISOString().split("T")[0] : undefined;
 
+            // Get medicine details for notification
+            const medicine = medicines.find(m => m.id === formData.medicineId);
+
+            // Schedule notification
+            let notificationId: string | null = null;
+            if (medicine) {
+                notificationId = await notificationService.scheduleNotification({
+                    medicineId: formData.medicineId,
+                    medicineName: medicine.name,
+                    dosage: medicine.dosage,
+                    time: timeString,
+                    recurrence: formData.recurrence,
+                    recurrenceDays: formData.recurrence === "weekly" ? formData.recurrenceDays : undefined,
+                    startDate: startDateString,
+                    endDate: endDateString,
+                });
+            }
+
             await createSchedule({
                 medicineId: formData.medicineId,
                 time: timeString,
@@ -86,10 +105,11 @@ export default function AddScheduleForm() {
                 recurrenceDays: formData.recurrence === "weekly" ? JSON.stringify(formData.recurrenceDays) : undefined,
                 startDate: startDateString,
                 endDate: endDateString,
+                notificationId: notificationId || undefined,
                 active: true,
             });
 
-            Alert.alert("Success", "Schedule created successfully", [
+            Alert.alert("Success", "Schedule and reminder created successfully", [
                 { text: "OK", onPress: () => router.back() },
             ]);
         } catch (error) {

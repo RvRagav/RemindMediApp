@@ -12,6 +12,7 @@ import {
     Text,
     View,
 } from "react-native";
+import { notificationService } from "../services/notificationService";
 import { useMedicineStore, useScheduleStore } from "../store";
 import { RecurrenceType } from "../types";
 
@@ -111,6 +112,27 @@ export default function EditScheduleForm() {
             const startDateString = formData.startDate.toISOString().split("T")[0];
             const endDateString = formData.endDate ? formData.endDate.toISOString().split("T")[0] : undefined;
 
+            // Cancel old notification if exists
+            if (selectedSchedule?.notificationId) {
+                await notificationService.cancelNotification(selectedSchedule.notificationId);
+            }
+
+            // Schedule new notification
+            const medicine = medicines.find(m => m.id === formData.medicineId);
+            let notificationId: string | null = null;
+            if (medicine) {
+                notificationId = await notificationService.scheduleNotification({
+                    medicineId: formData.medicineId,
+                    medicineName: medicine.name,
+                    dosage: medicine.dosage,
+                    time: timeString,
+                    recurrence: formData.recurrence,
+                    recurrenceDays: formData.recurrence === "weekly" ? formData.recurrenceDays : undefined,
+                    startDate: startDateString,
+                    endDate: endDateString,
+                });
+            }
+
             await updateSchedule(Number(id), {
                 medicineId: formData.medicineId,
                 time: timeString,
@@ -119,9 +141,10 @@ export default function EditScheduleForm() {
                     formData.recurrence === "weekly" ? JSON.stringify(formData.recurrenceDays) : undefined,
                 startDate: startDateString,
                 endDate: endDateString,
+                notificationId: notificationId || undefined,
             });
 
-            Alert.alert("Success", "Schedule updated successfully", [
+            Alert.alert("Success", "Schedule and reminder updated successfully", [
                 { text: "OK", onPress: () => router.back() },
             ]);
         } catch (error) {
@@ -140,8 +163,12 @@ export default function EditScheduleForm() {
                     style: "destructive",
                     onPress: async () => {
                         if (id) {
+                            // Cancel notification before deleting schedule
+                            if (selectedSchedule?.notificationId) {
+                                await notificationService.cancelNotification(selectedSchedule.notificationId);
+                            }
                             await deleteSchedule(Number(id));
-                            Alert.alert("Success", "Schedule deleted successfully");
+                            Alert.alert("Success", "Schedule and reminder deleted successfully");
                             router.back();
                         }
                     },
