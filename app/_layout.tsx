@@ -2,6 +2,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { DatabaseProvider } from "../src/providers";
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -22,23 +23,25 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="add-medication"
-        options={{
-          presentation: "modal",
-          headerShown: false
-        }}
-      />
-      <Stack.Screen
-        name="medication-details"
-        options={{
-          headerShown: true,
-          title: "Medication Details"
-        }}
-      />
-    </Stack>
+    <DatabaseProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="add-medication"
+          options={{
+            presentation: "modal",
+            headerShown: false
+          }}
+        />
+        <Stack.Screen
+          name="medication-details"
+          options={{
+            headerShown: true,
+            title: "Medication Details"
+          }}
+        />
+      </Stack>
+    </DatabaseProvider>
   );
 }

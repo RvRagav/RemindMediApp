@@ -1,42 +1,70 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useMedicineStore, useUserStore } from "../../src/store";
 
 export default function HomeScreen() {
     const router = useRouter();
+    const { profile, fetchProfile } = useUserStore();
+    const { medicines, fetchMedicines, isLoading } = useMedicineStore();
+
+    useEffect(() => {
+        fetchProfile();
+        fetchMedicines();
+    }, []);
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return "Good Morning";
+        if (hour < 18) return "Good Afternoon";
+        return "Good Evening";
+    };
 
     return (
         <ScrollView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.greeting}>Good Morning! 👋</Text>
-                <Text style={styles.subtitle}>Time to take care of your health</Text>
+                <Text style={styles.greeting}>{getGreeting()}! 👋</Text>
+                <Text style={styles.subtitle}>
+                    {profile ? `${profile.name}, time to take care of your health` : "Time to take care of your health"}
+                </Text>
             </View>
 
             <View style={styles.statsContainer}>
                 <View style={styles.statCard}>
                     <Ionicons name="checkmark-circle" size={32} color="#4CAF50" />
-                    <Text style={styles.statNumber}>8</Text>
+                    <Text style={styles.statNumber}>0</Text>
                     <Text style={styles.statLabel}>Taken Today</Text>
                 </View>
                 <View style={styles.statCard}>
-                    <Ionicons name="alarm" size={32} color="#FF9800" />
-                    <Text style={styles.statNumber}>3</Text>
-                    <Text style={styles.statLabel}>Upcoming</Text>
+                    <Ionicons name="medical" size={32} color="#007AFF" />
+                    <Text style={styles.statNumber}>{medicines.length}</Text>
+                    <Text style={styles.statLabel}>Medications</Text>
                 </View>
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Today's Reminders</Text>
-                <View style={styles.reminderCard}>
-                    <View style={styles.reminderTime}>
-                        <Text style={styles.timeText}>9:00 AM</Text>
+                <Text style={styles.sectionTitle}>Your Medications</Text>
+                {isLoading ? (
+                    <ActivityIndicator size="large" color="#007AFF" style={{ marginTop: 20 }} />
+                ) : medicines.length > 0 ? (
+                    medicines.slice(0, 3).map((medicine) => (
+                        <View key={medicine.id} style={styles.reminderCard}>
+                            <View style={[styles.reminderTime, { backgroundColor: medicine.color || "#E3F2FD" }]}>
+                                <Ionicons name="medical" size={20} color="#1976D2" />
+                            </View>
+                            <View style={styles.reminderDetails}>
+                                <Text style={styles.medicationName}>{medicine.name}</Text>
+                                <Text style={styles.dosage}>{medicine.dosage} - {medicine.form}</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={24} color="#999" />
+                        </View>
+                    ))
+                ) : (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyText}>No medications added yet</Text>
                     </View>
-                    <View style={styles.reminderDetails}>
-                        <Text style={styles.medicationName}>Aspirin</Text>
-                        <Text style={styles.dosage}>100mg - 1 tablet</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={24} color="#999" />
-                </View>
+                )}
             </View>
 
             <Pressable
@@ -153,5 +181,13 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontSize: 16,
         fontWeight: "600",
+    },
+    emptyState: {
+        padding: 20,
+        alignItems: "center",
+    },
+    emptyText: {
+        fontSize: 16,
+        color: "#999",
     },
 });
