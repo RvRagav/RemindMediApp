@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMedicineStore, useUserStore } from "../../src/store";
 
 export default function HomeScreen() {
     const router = useRouter();
+    const { t } = useTranslation();
     const { profile, fetchProfile } = useUserStore();
     const { medicines, fetchMedicines, isLoading } = useMedicineStore();
 
@@ -16,9 +18,9 @@ export default function HomeScreen() {
 
     const getGreeting = () => {
         const hour = new Date().getHours();
-        if (hour < 12) return "Good Morning";
-        if (hour < 18) return "Good Afternoon";
-        return "Good Evening";
+        if (hour < 12) return t("home.goodMorning");
+        if (hour < 18) return t("home.goodAfternoon");
+        return t("home.goodEvening");
     };
 
     return (
@@ -26,7 +28,7 @@ export default function HomeScreen() {
             <View style={styles.header}>
                 <Text style={styles.greeting}>{getGreeting()}! 👋</Text>
                 <Text style={styles.subtitle}>
-                    {profile ? `${profile.name}, time to take care of your health` : "Time to take care of your health"}
+                    {profile ? `${profile.name}, ${t("home.subtitle")}` : t("home.subtitle")}
                 </Text>
             </View>
 
@@ -34,17 +36,17 @@ export default function HomeScreen() {
                 <View style={styles.statCard}>
                     <Ionicons name="checkmark-circle" size={32} color="#4CAF50" />
                     <Text style={styles.statNumber}>0</Text>
-                    <Text style={styles.statLabel}>Taken Today</Text>
+                    <Text style={styles.statLabel}>{t("home.takenToday")}</Text>
                 </View>
                 <View style={styles.statCard}>
                     <Ionicons name="medical" size={32} color="#007AFF" />
                     <Text style={styles.statNumber}>{medicines.length}</Text>
-                    <Text style={styles.statLabel}>Medications</Text>
+                    <Text style={styles.statLabel}>{t("home.medications")}</Text>
                 </View>
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Your Medications</Text>
+                <Text style={styles.sectionTitle}>{t("home.yourMedications")}</Text>
                 {isLoading ? (
                     <ActivityIndicator size="large" color="#007AFF" style={{ marginTop: 20 }} />
                 ) : medicines.length > 0 ? (

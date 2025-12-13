@@ -1,40 +1,85 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useUserStore } from "../../src/store";
 
 export default function ProfileScreen() {
+    const router = useRouter();
+    const { t, i18n } = useTranslation();
+    const { profile, fetchProfile, isLoading } = useUserStore();
+
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+
+    useEffect(() => {
+        if (profile) {
+            i18n.changeLanguage(profile.languagePreference);
+        }
+    }, [profile]);
+
+    const handleEditProfile = () => {
+        router.push("/edit-profile" as any);
+    };
+
+    const handleLanguageChange = async () => {
+        const newLang = i18n.language === "en" ? "ta" : "en";
+        await i18n.changeLanguage(newLang);
+        if (profile) {
+            const { updateProfile } = useUserStore.getState();
+            await updateProfile({ languagePreference: newLang as "en" | "ta" });
+        }
+    };
+
+    if (isLoading && !profile) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#007AFF" />
+            </View>
+        );
+    }
+
     return (
         <ScrollView style={styles.container}>
             <View style={styles.profileHeader}>
                 <View style={styles.avatar}>
                     <Ionicons name="person" size={48} color="#007AFF" />
                 </View>
-                <Text style={styles.name}>John Doe</Text>
-                <Text style={styles.subtitle}>Age: 45 • Male</Text>
+                <Text style={styles.name}>{profile?.name || "Guest User"}</Text>
+                <Text style={styles.subtitle}>
+                    {t("profile.age")}: {profile?.age || "N/A"} • {t(`gender.${profile?.gender || "other"}`)}
+                </Text>
+                <Pressable style={styles.editButton} onPress={handleEditProfile}>
+                    <Ionicons name="create-outline" size={18} color="#007AFF" />
+                    <Text style={styles.editButtonText}>{t("profile.editProfile")}</Text>
+                </Pressable>
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Health Information</Text>
+                <Text style={styles.sectionTitle}>{t("profile.healthInfo")}</Text>
                 <View style={styles.card}>
                     <View style={styles.infoRow}>
                         <Ionicons name="medkit-outline" size={24} color="#666" />
                         <View style={styles.infoContent}>
-                            <Text style={styles.infoLabel}>Health Condition</Text>
-                            <Text style={styles.infoValue}>Hypertension, Diabetes</Text>
+                            <Text style={styles.infoLabel}>{t("profile.healthCondition")}</Text>
+                            <Text style={styles.infoValue}>{profile?.healthIssue || "Not specified"}</Text>
                         </View>
                     </View>
                 </View>
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Settings</Text>
+                <Text style={styles.sectionTitle}>{t("profile.settings")}</Text>
                 <View style={styles.card}>
-                    <Pressable style={styles.settingItem}>
+                    <Pressable style={styles.settingItem} onPress={handleLanguageChange}>
                         <View style={styles.settingLeft}>
                             <Ionicons name="language-outline" size={24} color="#666" />
-                            <Text style={styles.settingText}>Language</Text>
+                            <Text style={styles.settingText}>{t("profile.language")}</Text>
                         </View>
                         <View style={styles.settingRight}>
-                            <Text style={styles.settingValue}>English</Text>
+                            <Text style={styles.settingValue}>{t(`languages.${i18n.language}`)}</Text>
                             <Ionicons name="chevron-forward" size={20} color="#999" />
                         </View>
                     </Pressable>
@@ -44,7 +89,7 @@ export default function ProfileScreen() {
                     <Pressable style={styles.settingItem}>
                         <View style={styles.settingLeft}>
                             <Ionicons name="notifications-outline" size={24} color="#666" />
-                            <Text style={styles.settingText}>Notifications</Text>
+                            <Text style={styles.settingText}>{t("profile.notifications")}</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#999" />
                     </Pressable>
@@ -54,7 +99,7 @@ export default function ProfileScreen() {
                     <Pressable style={styles.settingItem}>
                         <View style={styles.settingLeft}>
                             <Ionicons name="time-outline" size={24} color="#666" />
-                            <Text style={styles.settingText}>Reminder Settings</Text>
+                            <Text style={styles.settingText}>{t("profile.reminderSettings")}</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#999" />
                     </Pressable>
@@ -62,12 +107,12 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Data</Text>
+                <Text style={styles.sectionTitle}>{t("profile.data")}</Text>
                 <View style={styles.card}>
                     <Pressable style={styles.settingItem}>
                         <View style={styles.settingLeft}>
                             <Ionicons name="download-outline" size={24} color="#666" />
-                            <Text style={styles.settingText}>Export Data</Text>
+                            <Text style={styles.settingText}>{t("profile.exportData")}</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#999" />
                     </Pressable>
@@ -78,7 +123,7 @@ export default function ProfileScreen() {
                         <View style={styles.settingLeft}>
                             <Ionicons name="trash-outline" size={24} color="#F44336" />
                             <Text style={[styles.settingText, { color: "#F44336" }]}>
-                                Clear All Data
+                                {t("profile.clearAllData")}
                             </Text>
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#999" />
@@ -118,6 +163,28 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 16,
         color: "#666",
+        marginBottom: 12,
+    },
+    editButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: "#007AFF",
+        marginTop: 12,
+    },
+    editButtonText: {
+        color: "#007AFF",
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
     },
     section: {
         marginTop: 20,

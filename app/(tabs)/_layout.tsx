@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useColorScheme } from "react-native";
 
 export default function TabLayout() {
     const colorScheme = useColorScheme();
+    const { t } = useTranslation();
 
     const iconColor = colorScheme === "dark" ? "#fff" : "#000";
     const activeColor = "#007AFF";
@@ -22,7 +24,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: "Home",
+                    title: t("tabs.home"),
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? "home" : "home-outline"}
@@ -35,7 +37,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="medications"
                 options={{
-                    title: "Medications",
+                    title: t("tabs.medications"),
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? "medical" : "medical-outline"}
@@ -48,7 +50,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="schedule"
                 options={{
-                    title: "Schedule",
+                    title: t("tabs.schedule"),
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? "calendar" : "calendar-outline"}
@@ -61,7 +63,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="profile"
                 options={{
-                    title: "Profile",
+                    title: t("tabs.profile"),
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? "person" : "person-outline"}

@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useScheduleStore } from "../../src/store";
 
 export default function ScheduleScreen() {
     const router = useRouter();
+    const { t } = useTranslation();
     const { todaySchedules, fetchTodaySchedules, isLoading } = useScheduleStore();
 
     useEffect(() => {
@@ -28,7 +30,7 @@ export default function ScheduleScreen() {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.date}>Today, {getTodayDate()}</Text>
+                <Text style={styles.date}>{t("schedule.today")}, {getTodayDate()}</Text>
                 <Pressable style={styles.addButton} onPress={() => router.push("/add-schedule" as any)}>
                     <Ionicons name="add-circle" size={28} color="#007AFF" />
                 </Pressable>
@@ -38,11 +40,11 @@ export default function ScheduleScreen() {
                 {todaySchedules.length === 0 ? (
                     <View style={styles.emptyContainer}>
                         <Ionicons name="calendar-outline" size={80} color="#ccc" />
-                        <Text style={styles.emptyTitle}>No Schedules Today</Text>
-                        <Text style={styles.emptySubtitle}>Add your first medication schedule</Text>
+                        <Text style={styles.emptyTitle}>{t("schedule.noSchedules")}</Text>
+                        <Text style={styles.emptySubtitle}>{t("schedule.addFirst")}</Text>
                         <Pressable style={styles.emptyButton} onPress={() => router.push("/add-schedule" as any)}>
                             <Ionicons name="add-circle-outline" size={20} color="#fff" />
-                            <Text style={styles.emptyButtonText}>Add Schedule</Text>
+                            <Text style={styles.emptyButtonText}>{t("schedule.addSchedule")}</Text>
                         </Pressable>
                     </View>
                 ) : (

@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMedicineStore } from "../../src/store";
 
 export default function MedicationsScreen() {
     const router = useRouter();
+    const { t } = useTranslation();
     const { medicines, fetchMedicines, isLoading } = useMedicineStore();
 
     useEffect(() => {
@@ -26,9 +28,9 @@ export default function MedicationsScreen() {
                 <ScrollView style={styles.content}>
                     <View style={styles.emptyState}>
                         <Ionicons name="medical-outline" size={80} color="#ccc" />
-                        <Text style={styles.emptyTitle}>No Medications Yet</Text>
+                        <Text style={styles.emptyTitle}>{t("medications.noMedications")}</Text>
                         <Text style={styles.emptySubtitle}>
-                            Add your first medication to get started
+                            {t("medications.addFirst")}
                         </Text>
                     </View>
                 </ScrollView>
