@@ -45,8 +45,12 @@ class NotificationService {
                 importance: Notifications.AndroidImportance.MAX,
                 vibrationPattern: [0, 250, 250, 250],
                 lightColor: '#FF231F7C',
-                sound: 'default',
+                sound: require('../voice/alarm.mp3'), // You may need a custom alarm sound file here
                 enableVibrate: true,
+                enableLights: true,
+                bypassDnd: true, // Try to bypass Do Not Disturb
+                showBadge: true,
+                lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
                 audioAttributes: {
                     usage: Notifications.AndroidAudioUsage.ALARM,
                     contentType: Notifications.AndroidAudioContentType.SONIFICATION,
