@@ -4,7 +4,6 @@ import { Platform } from 'react-native';
 // Configure notification behavior
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
-        shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
         shouldShowBanner: true,
@@ -13,6 +12,7 @@ Notifications.setNotificationHandler({
 });
 
 export interface ScheduleNotificationParams {
+    scheduleId?: number; // Optional for when creating schedule
     medicineId: number;
     medicineName: string;
     dosage: string;
@@ -88,15 +88,72 @@ class NotificationService {
         });
 
         let trigger: Notifications.NotificationTriggerInput;
+        const ONE_DAY_SECONDS = 86400; // 24 hours
+        const ONE_WEEK_SECONDS = 604800; // 7 days
 
         if (params.recurrence === 'daily') {
-            // Schedule daily at specific time using timeInterval (24 hours = 86400 seconds)
-            trigger = {
-                type: 'timeInterval',
-                seconds: Math.max(60, secondsUntilNotification),
-                repeats: true,
-            } as Notifications.TimeIntervalTriggerInput;
-            console.log('📆 Daily trigger created:', trigger);
+            // For daily: schedule to first occurrence, then repeat every 24 hours
+            // Android timeInterval repeats at the SAME interval, so we use 24 hours
+            const firstTriggerSeconds = Math.max(60, secondsUntilNotification);
+
+            // Schedule first notification
+            const firstId = await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: '💊 Medication Reminder',
+                    body: `Time to take ${params.medicineName} (${params.dosage})`,
+                    data: {
+                        scheduleId: params.scheduleId,
+                        medicineId: params.medicineId,
+                        medicineName: params.medicineName,
+                        dosage: params.dosage,
+                        scheduledTime: nextOccurrence.toISOString(),
+                    },
+                    sound: 'default',
+                    priority: Notifications.AndroidNotificationPriority.MAX,
+                    ios: { sound: true },
+                } as any,
+                trigger: {
+                    type: 'timeInterval',
+                    seconds: firstTriggerSeconds,
+                    repeats: false,
+                } as Notifications.TimeIntervalTriggerInput,
+            });
+
+            // Calculate next repeat time
+            const nextRepeatTime = new Date(nextOccurrence);
+            nextRepeatTime.setDate(nextRepeatTime.getDate() + 1);
+
+            // Schedule repeating daily notification (starts after first one)
+            const repeatId = await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: '💊 Medication Reminder',
+                    body: `Time to take ${params.medicineName} (${params.dosage})`,
+                    data: {
+                        scheduleId: params.scheduleId,
+                        medicineId: params.medicineId,
+                        medicineName: params.medicineName,
+                        dosage: params.dosage,
+                        scheduledTime: nextRepeatTime.toISOString(),
+                    },
+                    sound: 'default',
+                    priority: Notifications.AndroidNotificationPriority.MAX,
+                    ios: { sound: true },
+                } as any,
+                trigger: {
+                    type: 'timeInterval',
+                    seconds: firstTriggerSeconds + ONE_DAY_SECONDS,
+                    repeats: true,
+                } as Notifications.TimeIntervalTriggerInput,
+            });
+
+            console.log('📆 Daily notifications created:', {
+                firstId,
+                repeatId,
+                firstTriggerSeconds,
+                repeatInterval: ONE_DAY_SECONDS,
+            });
+
+            return `${firstId},${repeatId}`;
         } else if (params.recurrence === 'weekly' && params.recurrenceDays && params.recurrenceDays.length > 0) {
             // Schedule for specific days of the week
             const notificationIds: string[] = [];
@@ -121,25 +178,58 @@ class NotificationService {
                     actualSeconds: Math.max(60, secondsUntil),
                 });
 
-                const id = await Notifications.scheduleNotificationAsync({
+                // First notification
+                const firstId = await Notifications.scheduleNotificationAsync({
                     content: {
                         title: '💊 Medication Reminder',
                         body: `Time to take ${params.medicineName} (${params.dosage})`,
                         data: {
+                            scheduleId: params.scheduleId,
                             medicineId: params.medicineId,
                             medicineName: params.medicineName,
                             dosage: params.dosage,
+                            scheduledTime: nextWeekday.toISOString(),
                         },
                         sound: 'default',
                         priority: Notifications.AndroidNotificationPriority.MAX,
-                    },
+                        ios: { sound: true },
+                    } as any,
                     trigger: {
                         type: 'timeInterval',
                         seconds: Math.max(60, secondsUntil),
+                        repeats: false,
+                    } as Notifications.TimeIntervalTriggerInput,
+                });
+
+                // Calculate next repeat time
+                const nextRepeatWeekday = new Date(nextWeekday);
+                nextRepeatWeekday.setDate(nextRepeatWeekday.getDate() + 7);
+
+                // Repeating weekly notification
+                const repeatId = await Notifications.scheduleNotificationAsync({
+                    content: {
+                        title: '💊 Medication Reminder',
+                        body: `Time to take ${params.medicineName} (${params.dosage})`,
+                        data: {
+                            scheduleId: params.scheduleId,
+                            medicineId: params.medicineId,
+                            medicineName: params.medicineName,
+                            dosage: params.dosage,
+                            scheduledTime: nextRepeatWeekday.toISOString(),
+                        },
+                        sound: 'default',
+                        priority: Notifications.AndroidNotificationPriority.MAX,
+                        ios: { sound: true },
+                    } as any,
+                    trigger: {
+                        type: 'timeInterval',
+                        seconds: Math.max(60, secondsUntil) + ONE_WEEK_SECONDS,
                         repeats: true,
                     } as Notifications.TimeIntervalTriggerInput,
                 });
-                notificationIds.push(id);
+
+                notificationIds.push(firstId);
+                notificationIds.push(repeatId);
             }
 
             // Return comma-separated IDs for storage
@@ -150,31 +240,52 @@ class NotificationService {
             // Don't schedule automatic notifications for as-needed medications
             return null;
         } else {
-            // Default to daily for other recurrence types
-            trigger = {
-                type: 'timeInterval',
-                seconds: Math.max(60, secondsUntilNotification),
-                repeats: true,
-            } as Notifications.TimeIntervalTriggerInput;
+            // Default to daily for other recurrence types (monthly, custom)
+            const firstTriggerSeconds = Math.max(60, secondsUntilNotification);
+
+            const firstId = await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: '💊 Medication Reminder',
+                    body: `Time to take ${params.medicineName} (${params.dosage})`,
+                    data: {
+                        medicineId: params.medicineId,
+                        medicineName: params.medicineName,
+                        dosage: params.dosage,
+                    },
+                    sound: 'default',
+                    priority: Notifications.AndroidNotificationPriority.MAX,
+                    ios: { sound: true },
+                } as any,
+                trigger: {
+                    type: 'timeInterval',
+                    seconds: firstTriggerSeconds,
+                    repeats: false,
+                } as Notifications.TimeIntervalTriggerInput,
+            });
+
+            const repeatId = await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: '💊 Medication Reminder',
+                    body: `Time to take ${params.medicineName} (${params.dosage})`,
+                    data: {
+                        medicineId: params.medicineId,
+                        medicineName: params.medicineName,
+                        dosage: params.dosage,
+                    },
+                    sound: 'default',
+                    priority: Notifications.AndroidNotificationPriority.MAX,
+                    ios: { sound: true },
+                } as any,
+                trigger: {
+                    type: 'timeInterval',
+                    seconds: firstTriggerSeconds + ONE_DAY_SECONDS,
+                    repeats: true,
+                } as Notifications.TimeIntervalTriggerInput,
+            });
+
+            console.log('📆 Default daily notifications created:', { firstId, repeatId });
+            return `${firstId},${repeatId}`;
         }
-
-        const notificationId = await Notifications.scheduleNotificationAsync({
-            content: {
-                title: '💊 Medication Reminder',
-                body: `Time to take ${params.medicineName} (${params.dosage})`,
-                data: {
-                    medicineId: params.medicineId,
-                    medicineName: params.medicineName,
-                    dosage: params.dosage,
-                },
-                sound: 'default',
-                priority: Notifications.AndroidNotificationPriority.MAX,
-            },
-            trigger,
-        });
-
-        console.log('✅ Notification scheduled successfully! ID:', notificationId);
-        return notificationId;
     }
 
     async cancelNotification(notificationId: string): Promise<void> {
@@ -207,7 +318,9 @@ class NotificationService {
                 body: `Time to take ${medicineName} (${dosage})`,
                 data: { medicineName, dosage },
                 sound: 'default',
-            },
+                priority: Notifications.AndroidNotificationPriority.MAX,
+                ios: { sound: true },
+            } as any,
             trigger: null, // null means send immediately
         });
     }

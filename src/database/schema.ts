@@ -76,25 +76,44 @@ CREATE TABLE IF NOT EXISTS appointments (
 );
 `;
 
+export const CREATE_NOTIFICATION_LOGS_TABLE = `
+CREATE TABLE IF NOT EXISTS notification_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  notification_id TEXT NOT NULL,
+  schedule_id INTEGER NOT NULL,
+  medicine_id INTEGER NOT NULL,
+  scheduled_time TEXT NOT NULL,
+  fired_at TEXT NOT NULL DEFAULT (datetime('now')),
+  responded_at TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'taken', 'skipped')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE CASCADE,
+  FOREIGN KEY (medicine_id) REFERENCES medicines(id) ON DELETE CASCADE
+);
+`;
+
 // Indexes for better query performance
 export const CREATE_INDEXES = [
-    'CREATE INDEX IF NOT EXISTS idx_schedules_medicine_id ON schedules(medicine_id);',
-    'CREATE INDEX IF NOT EXISTS idx_schedules_active ON schedules(active);',
-    'CREATE INDEX IF NOT EXISTS idx_history_medicine_id ON medicine_history(medicine_id);',
-    'CREATE INDEX IF NOT EXISTS idx_history_schedule_id ON medicine_history(schedule_id);',
-    'CREATE INDEX IF NOT EXISTS idx_history_status ON medicine_history(status);',
-    'CREATE INDEX IF NOT EXISTS idx_history_scheduled_time ON medicine_history(scheduled_time);',
-    'CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);',
-    'CREATE INDEX IF NOT EXISTS idx_appointments_completed ON appointments(completed);',
+  'CREATE INDEX IF NOT EXISTS idx_schedules_medicine_id ON schedules(medicine_id);',
+  'CREATE INDEX IF NOT EXISTS idx_schedules_active ON schedules(active);',
+  'CREATE INDEX IF NOT EXISTS idx_history_medicine_id ON medicine_history(medicine_id);',
+  'CREATE INDEX IF NOT EXISTS idx_history_schedule_id ON medicine_history(schedule_id);',
+  'CREATE INDEX IF NOT EXISTS idx_history_status ON medicine_history(status);',
+  'CREATE INDEX IF NOT EXISTS idx_history_scheduled_time ON medicine_history(scheduled_time);',
+  'CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);',
+  'CREATE INDEX IF NOT EXISTS idx_appointments_completed ON appointments(completed);',
+  'CREATE INDEX IF NOT EXISTS idx_notification_logs_status ON notification_logs(status);',
+  'CREATE INDEX IF NOT EXISTS idx_notification_logs_schedule_id ON notification_logs(schedule_id);',
+  'CREATE INDEX IF NOT EXISTS idx_notification_logs_scheduled_time ON notification_logs(scheduled_time);',
 ];
 
 // Sample data for testing
 export const INSERT_SAMPLE_DATA = {
-    userProfile: `
+  userProfile: `
     INSERT OR IGNORE INTO user_profile (id, name, age, gender, health_issue, language_preference)
     VALUES (1, 'John Doe', 45, 'male', 'Hypertension, Diabetes', 'en');
   `,
-    medicines: `
+  medicines: `
     INSERT OR IGNORE INTO medicines (name, dosage, form, instructions, color, active)
     VALUES 
       ('Aspirin', '100mg', 'tablet', 'Take with food. Avoid taking on an empty stomach.', '#FF6B6B', 1),

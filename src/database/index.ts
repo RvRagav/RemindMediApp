@@ -4,6 +4,7 @@ import {
     CREATE_INDEXES,
     CREATE_MEDICINE_HISTORY_TABLE,
     CREATE_MEDICINES_TABLE,
+    CREATE_NOTIFICATION_LOGS_TABLE,
     CREATE_SCHEDULES_TABLE,
     CREATE_USER_PROFILE_TABLE,
     INSERT_SAMPLE_DATA,
@@ -27,6 +28,7 @@ class Database {
             await this.db.execAsync(CREATE_SCHEDULES_TABLE);
             await this.db.execAsync(CREATE_MEDICINE_HISTORY_TABLE);
             await this.db.execAsync(CREATE_APPOINTMENTS_TABLE);
+            await this.db.execAsync(CREATE_NOTIFICATION_LOGS_TABLE);
 
             // Create indexes
             for (const indexQuery of CREATE_INDEXES) {

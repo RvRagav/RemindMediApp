@@ -32,7 +32,7 @@ export default function AddScheduleForm() {
     const router = useRouter();
     const { medicineId } = useLocalSearchParams<{ medicineId: string }>();
     const { medicines, fetchMedicines } = useMedicineStore();
-    const { createSchedule, isLoading } = useScheduleStore();
+    const { createSchedule, updateSchedule, isLoading } = useScheduleStore();
 
     const [formData, setFormData] = useState({
         medicineId: medicineId ? Number(medicineId) : 0,
@@ -83,10 +83,23 @@ export default function AddScheduleForm() {
             // Get medicine details for notification
             const medicine = medicines.find(m => m.id === formData.medicineId);
 
-            // Schedule notification
+            // Create schedule first
+            const newSchedule = await createSchedule({
+                medicineId: formData.medicineId,
+                time: timeString,
+                recurrence: formData.recurrence,
+                recurrenceDays: formData.recurrence === "weekly" ? JSON.stringify(formData.recurrenceDays) : undefined,
+                startDate: startDateString,
+                endDate: endDateString,
+                notificationId: undefined, // Will be set after scheduling
+                active: true,
+            });
+
+            // Schedule notification with scheduleId
             let notificationId: string | null = null;
-            if (medicine) {
+            if (medicine && newSchedule) {
                 notificationId = await notificationService.scheduleNotification({
+                    scheduleId: newSchedule.id,
                     medicineId: formData.medicineId,
                     medicineName: medicine.name,
                     dosage: medicine.dosage,
@@ -96,18 +109,15 @@ export default function AddScheduleForm() {
                     startDate: startDateString,
                     endDate: endDateString,
                 });
-            }
 
-            await createSchedule({
-                medicineId: formData.medicineId,
-                time: timeString,
-                recurrence: formData.recurrence,
-                recurrenceDays: formData.recurrence === "weekly" ? JSON.stringify(formData.recurrenceDays) : undefined,
-                startDate: startDateString,
-                endDate: endDateString,
-                notificationId: notificationId || undefined,
-                active: true,
-            });
+                // Update schedule with notification ID
+                if (notificationId) {
+                    await updateSchedule(newSchedule.id, {
+                        ...newSchedule,
+                        notificationId,
+                    });
+                }
+            }
 
             Alert.alert("Success", "Schedule and reminder created successfully", [
                 { text: "OK", onPress: () => router.back() },

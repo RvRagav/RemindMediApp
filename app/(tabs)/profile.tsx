@@ -1,16 +1,18 @@
+import NotificationHistory from "@/src/components/NotificationHistory";
+import { notificationService } from "@/src/services/notificationService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useUserStore } from "../../src/store";
-import { notificationService } from "@/src/services/notificationService";
 
 export default function ProfileScreen() {
     const router = useRouter();
     const { t, i18n } = useTranslation();
     const { profile, fetchProfile, isLoading } = useUserStore();
     const [testSent, setTestSent] = useState(false);
+    const [showNotificationHistory, setShowNotificationHistory] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -105,10 +107,10 @@ export default function ProfileScreen() {
 
                     <View style={styles.divider} />
 
-                    <Pressable style={styles.settingItem}>
+                    <Pressable style={styles.settingItem} onPress={() => setShowNotificationHistory(true)}>
                         <View style={styles.settingLeft}>
                             <Ionicons name="notifications-outline" size={24} color="#666" />
-                            <Text style={styles.settingText}>{t("profile.notifications")}</Text>
+                            <Text style={styles.settingText}>{t("profile.notificationHistory")}</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#999" />
                     </Pressable>
@@ -161,6 +163,27 @@ export default function ProfileScreen() {
                     </Pressable>
                 </View>
             </View>
+
+            {/* Notification History Modal */}
+            <Modal
+                visible={showNotificationHistory}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                onRequestClose={() => setShowNotificationHistory(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>{t("notificationHistory.title")}</Text>
+                        <Pressable
+                            onPress={() => setShowNotificationHistory(false)}
+                            style={styles.closeButton}
+                        >
+                            <Ionicons name="close" size={28} color="#333" />
+                        </Pressable>
+                    </View>
+                    <NotificationHistory />
+                </View>
+            </Modal>
         </ScrollView>
     );
 }
@@ -285,5 +308,27 @@ const styles = StyleSheet.create({
         height: 1,
         backgroundColor: "#e0e0e0",
         marginLeft: 52,
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+        backgroundColor: '#fff',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#333',
+    },
+    closeButton: {
+        padding: 4,
     },
 });
