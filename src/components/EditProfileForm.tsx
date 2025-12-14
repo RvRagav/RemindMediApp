@@ -135,6 +135,8 @@ export default function EditProfileForm() {
                             selectedValue={formData.gender}
                             onValueChange={(value) => setFormData({ ...formData, gender: value })}
                             style={styles.picker}
+                            itemStyle={styles.pickerItem}
+                            mode="dropdown"
                         >
                             <Picker.Item label="Male" value="male" />
                             <Picker.Item label="Female" value="female" />
@@ -251,6 +253,12 @@ const styles = StyleSheet.create({
     },
     picker: {
         height: 50,
+        color: '#333',
+    },
+    pickerItem: {
+        fontSize: 16,
+        height: 50,
+        color: '#333',
     },
     submitButton: {
         backgroundColor: "#007AFF",

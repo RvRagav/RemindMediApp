@@ -217,6 +217,7 @@ export default function EditScheduleForm() {
                                 setFormData({ ...formData, medicineId: value });
                             }}
                             style={styles.picker}
+                            itemStyle={styles.pickerItem}
                             mode="dropdown"
                         >
                             <Picker.Item label="Select medication" value={0} />
@@ -248,6 +249,7 @@ export default function EditScheduleForm() {
                                 setFormData({ ...formData, recurrence: value });
                             }}
                             style={styles.picker}
+                            itemStyle={styles.pickerItem}
                             mode="dropdown"
                         >
                             {RECURRENCE_OPTIONS.map((option) => (
@@ -425,6 +427,12 @@ const styles = StyleSheet.create({
     },
     picker: {
         height: 50,
+        color: '#333',
+    },
+    pickerItem: {
+        fontSize: 16,
+        height: 50,
+        color: '#333',
     },
     inputError: {
         borderColor: "#FF3B30",

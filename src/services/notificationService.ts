@@ -47,6 +47,14 @@ class NotificationService {
                 lightColor: '#FF231F7C',
                 sound: 'default',
                 enableVibrate: true,
+                audioAttributes: {
+                    usage: Notifications.AndroidAudioUsage.ALARM,
+                    contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+                    flags: {
+                        enforceAudibility: true,
+                        requestHardwareAudioVideoSynchronization: false,
+                    },
+                },
             });
         }
 

@@ -113,6 +113,8 @@ export default function AddMedicationForm() {
                             selectedValue={formData.form}
                             onValueChange={(value) => setFormData({ ...formData, form: value })}
                             style={styles.picker}
+                            itemStyle={styles.pickerItem}
+                            mode="dropdown"
                         >
                             {MEDICINE_FORMS.map((form) => (
                                 <Picker.Item
@@ -243,6 +245,12 @@ const styles = StyleSheet.create({
     },
     picker: {
         height: 50,
+        color: '#333',
+    },
+    pickerItem: {
+        fontSize: 16,
+        height: 50,
+        color: '#333',
     },
     colorContainer: {
         flexDirection: "row",

@@ -34,9 +34,49 @@ export default function RootLayout() {
     }
   }, [loaded, error]);
 
-  // Setup notification response listener
+  // Setup notification received listener (when notification fires)
   useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener(
+    const receivedSubscription = Notifications.addNotificationReceivedListener(
+      async (notification) => {
+        console.log('Notification received:', notification);
+
+        const notificationId = notification.request.identifier;
+        const data = notification.request.content.data;
+
+        // Create pending log when notification fires
+        if (data.scheduleId && data.medicineId && data.scheduledTime) {
+          try {
+            const db = await database.getDatabase();
+            if (!db) return;
+
+            const notificationLogRepo = new NotificationLogRepository(db);
+
+            // Check if log already exists
+            const existingLog = await notificationLogRepo.findByNotificationId(notificationId);
+
+            if (!existingLog) {
+              await notificationLogRepo.create({
+                notification_id: notificationId,
+                schedule_id: data.scheduleId,
+                medicine_id: data.medicineId,
+                scheduled_time: data.scheduledTime,
+                status: 'pending',
+              });
+              console.log(`Created pending notification log for ${notificationId}`);
+            }
+          } catch (error) {
+            console.error('Error creating pending notification log:', error);
+          }
+        }
+      }
+    );
+
+    return () => receivedSubscription.remove();
+  }, []);
+
+  // Setup notification response listener (when notification is tapped)
+  useEffect(() => {
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(
       async (response) => {
         console.log('Notification tapped:', response);
 
@@ -71,7 +111,7 @@ export default function RootLayout() {
       }
     );
 
-    return () => subscription.remove();
+    return () => responseSubscription.remove();
   }, [t]);
 
   if (!loaded && !error) {

@@ -1,20 +1,51 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useMedicineStore, useUserStore } from "../../src/store";
+import { database } from "../../src/database";
+import { NotificationLogRepository } from "../../src/database/repositories";
+import { useMedicineStore, useScheduleStore, useUserStore } from "../../src/store";
 
 export default function HomeScreen() {
     const router = useRouter();
     const { t } = useTranslation();
     const { profile, fetchProfile } = useUserStore();
     const { medicines, fetchMedicines, isLoading } = useMedicineStore();
+    const { schedules, fetchSchedules } = useScheduleStore();
+    const [takenCount, setTakenCount] = useState(0);
+    const [totalToday, setTotalToday] = useState(0);
 
     useEffect(() => {
         fetchProfile();
         fetchMedicines();
+        fetchSchedules();
+        loadTodayStats();
     }, []);
+
+    const loadTodayStats = async () => {
+        try {
+            const db = await database.getDatabase();
+            if (!db) return;
+
+            const repo = new NotificationLogRepository(db);
+            const today = new Date().toISOString().split('T')[0];
+
+            // Get all logs from today
+            const allLogs = await repo.getRecentLogs(100);
+            const todayLogs = allLogs.filter(log =>
+                log.scheduled_time.startsWith(today)
+            );
+
+            const taken = todayLogs.filter(log => log.status === 'taken').length;
+            const total = todayLogs.length;
+
+            setTakenCount(taken);
+            setTotalToday(total);
+        } catch (error) {
+            console.error('Error loading today stats:', error);
+        }
+    };
 
     const getGreeting = () => {
         const hour = new Date().getHours();
@@ -35,7 +66,7 @@ export default function HomeScreen() {
             <View style={styles.statsContainer}>
                 <View style={styles.statCard}>
                     <Ionicons name="checkmark-circle" size={32} color="#4CAF50" />
-                    <Text style={styles.statNumber}>0</Text>
+                    <Text style={styles.statNumber}>{takenCount}/{totalToday}</Text>
                     <Text style={styles.statLabel}>{t("home.takenToday")}</Text>
                 </View>
                 <View style={styles.statCard}>
