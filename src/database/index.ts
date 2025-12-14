@@ -7,7 +7,6 @@ import {
     CREATE_NOTIFICATION_LOGS_TABLE,
     CREATE_SCHEDULES_TABLE,
     CREATE_USER_PROFILE_TABLE,
-    INSERT_SAMPLE_DATA,
 } from './schema';
 
 const DB_NAME = 'remindmedi.db';
@@ -35,33 +34,11 @@ class Database {
                 await this.db.execAsync(indexQuery);
             }
 
-            // Insert sample data (only if tables are empty)
-            await this.insertSampleDataIfNeeded();
-
             this.initialized = true;
             console.log('Database initialized successfully');
         } catch (error) {
             console.error('Database initialization error:', error);
             throw error;
-        }
-    }
-
-    private async insertSampleDataIfNeeded(): Promise<void> {
-        if (!this.db) return;
-
-        try {
-            // Check if user profile exists
-            const userCount = await this.db.getFirstAsync<{ count: number }>(
-                'SELECT COUNT(*) as count FROM user_profile'
-            );
-
-            if (userCount && userCount.count === 0) {
-                await this.db.execAsync(INSERT_SAMPLE_DATA.userProfile);
-                await this.db.execAsync(INSERT_SAMPLE_DATA.medicines);
-                console.log('Sample data inserted');
-            }
-        } catch (error) {
-            console.error('Error inserting sample data:', error);
         }
     }
 

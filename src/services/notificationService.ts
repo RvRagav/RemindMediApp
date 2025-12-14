@@ -40,12 +40,13 @@ class NotificationService {
 
         // Configure notification channel for Android
         if (Platform.OS === 'android') {
-            await Notifications.setNotificationChannelAsync('medication-reminders', {
+            // Use a new channel ID so Android applies the latest sound settings
+            await Notifications.setNotificationChannelAsync('medication-reminders-alarm', {
                 name: 'Medication Reminders',
                 importance: Notifications.AndroidImportance.MAX,
                 vibrationPattern: [0, 250, 250, 250],
                 lightColor: '#FF231F7C',
-                sound: require('../voice/alarm.mp3'), // You may need a custom alarm sound file here
+                sound: 'time_to_take_ur_meds.mp3', // Custom sound from android/app/src/main/res/raw/
                 enableVibrate: true,
                 enableLights: true,
                 bypassDnd: true, // Try to bypass Do Not Disturb
@@ -122,6 +123,7 @@ class NotificationService {
                     },
                     sound: 'default',
                     priority: Notifications.AndroidNotificationPriority.MAX,
+                    channelId: 'medication-reminders-alarm',
                     ios: { sound: true },
                 } as any,
                 trigger: {
@@ -149,6 +151,7 @@ class NotificationService {
                     },
                     sound: 'default',
                     priority: Notifications.AndroidNotificationPriority.MAX,
+                    channelId: 'medication-reminders-alarm',
                     ios: { sound: true },
                 } as any,
                 trigger: {
@@ -204,6 +207,7 @@ class NotificationService {
                         },
                         sound: 'default',
                         priority: Notifications.AndroidNotificationPriority.MAX,
+                        channelId: 'medication-reminders-alarm',
                         ios: { sound: true },
                     } as any,
                     trigger: {
@@ -231,6 +235,7 @@ class NotificationService {
                         },
                         sound: 'default',
                         priority: Notifications.AndroidNotificationPriority.MAX,
+                        channelId: 'medication-reminders-alarm',
                         ios: { sound: true },
                     } as any,
                     trigger: {
@@ -260,12 +265,15 @@ class NotificationService {
                     title: '💊 Medication Reminder',
                     body: `Time to take ${params.medicineName} (${params.dosage})`,
                     data: {
+                        scheduleId: params.scheduleId,
                         medicineId: params.medicineId,
                         medicineName: params.medicineName,
                         dosage: params.dosage,
+                        scheduledTime: nextOccurrence.toISOString(),
                     },
                     sound: 'default',
                     priority: Notifications.AndroidNotificationPriority.MAX,
+                    channelId: 'medication-reminders-alarm',
                     ios: { sound: true },
                 } as any,
                 trigger: {
@@ -280,12 +288,15 @@ class NotificationService {
                     title: '💊 Medication Reminder',
                     body: `Time to take ${params.medicineName} (${params.dosage})`,
                     data: {
+                        scheduleId: params.scheduleId,
                         medicineId: params.medicineId,
                         medicineName: params.medicineName,
                         dosage: params.dosage,
+                        scheduledTime: new Date(nextOccurrence.getTime() + ONE_DAY_SECONDS * 1000).toISOString(),
                     },
                     sound: 'default',
                     priority: Notifications.AndroidNotificationPriority.MAX,
+                    channelId: 'medication-reminders-alarm',
                     ios: { sound: true },
                 } as any,
                 trigger: {
@@ -331,6 +342,7 @@ class NotificationService {
                 data: { medicineName, dosage },
                 sound: 'default',
                 priority: Notifications.AndroidNotificationPriority.MAX,
+                channelId: 'medication-reminders-alarm',
                 ios: { sound: true },
             } as any,
             trigger: null, // null means send immediately

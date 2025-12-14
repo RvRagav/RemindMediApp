@@ -122,6 +122,7 @@ export default function EditScheduleForm() {
             let notificationId: string | null = null;
             if (medicine) {
                 notificationId = await notificationService.scheduleNotification({
+                    scheduleId: Number(id),
                     medicineId: formData.medicineId,
                     medicineName: medicine.name,
                     dosage: medicine.dosage,
