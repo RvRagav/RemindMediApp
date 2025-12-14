@@ -61,23 +61,45 @@ class NotificationService {
 
         const [hours, minutes] = params.time.split(':').map(Number);
 
+        // Calculate seconds until next occurrence
+        const now = new Date();
+        const nextOccurrence = new Date();
+        nextOccurrence.setHours(hours, minutes, 0, 0);
+
+        // If the time has already passed today, schedule for tomorrow
+        if (nextOccurrence <= now) {
+            nextOccurrence.setDate(nextOccurrence.getDate() + 1);
+        }
+
+        const secondsUntilNotification = Math.floor((nextOccurrence.getTime() - now.getTime()) / 1000);
         let trigger: Notifications.NotificationTriggerInput;
 
         if (params.recurrence === 'daily') {
-            // Schedule daily at specific time
+            // Schedule daily at specific time using timeInterval (24 hours = 86400 seconds)
             trigger = {
-                type: 'calendar',
-                hour: hours,
-                minute: minutes,
+                type: 'timeInterval',
+                seconds: Math.max(60, secondsUntilNotification),
                 repeats: true,
-            } as Notifications.CalendarTriggerInput;
+            } as Notifications.TimeIntervalTriggerInput;
         } else if (params.recurrence === 'weekly' && params.recurrenceDays && params.recurrenceDays.length > 0) {
             // Schedule for specific days of the week
-            // Note: For multiple days, we need to create separate notifications
-            // This will return the first notification ID
             const notificationIds: string[] = [];
 
             for (const weekday of params.recurrenceDays) {
+                // Calculate next occurrence for this weekday
+                const nextWeekday = new Date();
+                const currentDay = nextWeekday.getDay();
+                let daysToAdd = weekday - currentDay;
+
+                if (daysToAdd <= 0) {
+                    daysToAdd += 7;
+                }
+
+                nextWeekday.setDate(nextWeekday.getDate() + daysToAdd);
+                nextWeekday.setHours(hours, minutes, 0, 0);
+
+                const secondsUntil = Math.floor((nextWeekday.getTime() - now.getTime()) / 1000);
+
                 const id = await Notifications.scheduleNotificationAsync({
                     content: {
                         title: '💊 Medication Reminder',
@@ -91,12 +113,10 @@ class NotificationService {
                         priority: Notifications.AndroidNotificationPriority.MAX,
                     },
                     trigger: {
-                        type: 'calendar',
-                        weekday: weekday + 1, // expo-notifications uses 1-7 (Sunday=1)
-                        hour: hours,
-                        minute: minutes,
+                        type: 'timeInterval',
+                        seconds: Math.max(60, secondsUntil),
                         repeats: true,
-                    } as Notifications.CalendarTriggerInput,
+                    } as Notifications.TimeIntervalTriggerInput,
                 });
                 notificationIds.push(id);
             }
@@ -109,11 +129,10 @@ class NotificationService {
         } else {
             // Default to daily for other recurrence types
             trigger = {
-                type: 'calendar',
-                hour: hours,
-                minute: minutes,
+                type: 'timeInterval',
+                seconds: Math.max(60, secondsUntilNotification),
                 repeats: true,
-            } as Notifications.CalendarTriggerInput;
+            } as Notifications.TimeIntervalTriggerInput;
         }
 
         const notificationId = await Notifications.scheduleNotificationAsync({

@@ -148,7 +148,8 @@ export default function EditScheduleForm() {
                 { text: "OK", onPress: () => router.back() },
             ]);
         } catch (error) {
-            Alert.alert("Error", "Failed to update schedule. Please try again.");
+            console.error('Schedule update error:', error);
+            Alert.alert("Error", `Failed to update schedule: ${error}`);
         }
     };
 
@@ -211,8 +212,12 @@ export default function EditScheduleForm() {
                     <View style={[styles.pickerContainer, errors.medicineId && styles.inputError]}>
                         <Picker
                             selectedValue={formData.medicineId}
-                            onValueChange={(value) => setFormData({ ...formData, medicineId: value })}
+                            onValueChange={(value) => {
+                                console.log('Medicine selected:', value);
+                                setFormData({ ...formData, medicineId: value });
+                            }}
                             style={styles.picker}
+                            mode="dropdown"
                         >
                             <Picker.Item label="Select medication" value={0} />
                             {medicines.map((med) => (
@@ -238,8 +243,12 @@ export default function EditScheduleForm() {
                     <View style={styles.pickerContainer}>
                         <Picker
                             selectedValue={formData.recurrence}
-                            onValueChange={(value) => setFormData({ ...formData, recurrence: value })}
+                            onValueChange={(value) => {
+                                console.log('Recurrence selected:', value);
+                                setFormData({ ...formData, recurrence: value });
+                            }}
                             style={styles.picker}
+                            mode="dropdown"
                         >
                             {RECURRENCE_OPTIONS.map((option) => (
                                 <Picker.Item
