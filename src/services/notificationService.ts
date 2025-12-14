@@ -54,8 +54,16 @@ class NotificationService {
     }
 
     async scheduleNotification(params: ScheduleNotificationParams): Promise<string | null> {
+        console.log('📅 scheduleNotification called with:', {
+            medicineName: params.medicineName,
+            time: params.time,
+            recurrence: params.recurrence,
+            recurrenceDays: params.recurrenceDays,
+        });
+
         const hasPermission = await this.requestPermissions();
         if (!hasPermission) {
+            console.log('❌ Notification permission not granted');
             return null;
         }
 
@@ -72,6 +80,13 @@ class NotificationService {
         }
 
         const secondsUntilNotification = Math.floor((nextOccurrence.getTime() - now.getTime()) / 1000);
+        console.log('⏰ Scheduling details:', {
+            currentTime: now.toLocaleTimeString(),
+            nextOccurrence: nextOccurrence.toLocaleString(),
+            secondsUntilNotification,
+            actualSeconds: Math.max(60, secondsUntilNotification),
+        });
+
         let trigger: Notifications.NotificationTriggerInput;
 
         if (params.recurrence === 'daily') {
@@ -81,6 +96,7 @@ class NotificationService {
                 seconds: Math.max(60, secondsUntilNotification),
                 repeats: true,
             } as Notifications.TimeIntervalTriggerInput;
+            console.log('📆 Daily trigger created:', trigger);
         } else if (params.recurrence === 'weekly' && params.recurrenceDays && params.recurrenceDays.length > 0) {
             // Schedule for specific days of the week
             const notificationIds: string[] = [];
@@ -99,6 +115,11 @@ class NotificationService {
                 nextWeekday.setHours(hours, minutes, 0, 0);
 
                 const secondsUntil = Math.floor((nextWeekday.getTime() - now.getTime()) / 1000);
+                console.log(`📅 Weekly schedule for ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][weekday]}:`, {
+                    nextWeekday: nextWeekday.toLocaleString(),
+                    secondsUntil,
+                    actualSeconds: Math.max(60, secondsUntil),
+                });
 
                 const id = await Notifications.scheduleNotificationAsync({
                     content: {
@@ -122,7 +143,9 @@ class NotificationService {
             }
 
             // Return comma-separated IDs for storage
-            return notificationIds.join(',');
+            const joinedIds = notificationIds.join(',');
+            console.log('✅ Weekly notifications scheduled! IDs:', joinedIds);
+            return joinedIds;
         } else if (params.recurrence === 'as-needed') {
             // Don't schedule automatic notifications for as-needed medications
             return null;
@@ -150,6 +173,7 @@ class NotificationService {
             trigger,
         });
 
+        console.log('✅ Notification scheduled successfully! ID:', notificationId);
         return notificationId;
     }
 

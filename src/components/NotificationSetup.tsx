@@ -11,6 +11,7 @@ interface NotificationSetupProps {
 export default function NotificationSetup({ onComplete }: NotificationSetupProps) {
     const [permissionStatus, setPermissionStatus] = useState<"undetermined" | "granted" | "denied">("undetermined");
     const [isLoading, setIsLoading] = useState(true);
+    const [testSent, setTestSent] = useState(false);
 
     useEffect(() => {
         checkPermissions();
@@ -33,6 +34,18 @@ export default function NotificationSetup({ onComplete }: NotificationSetupProps
         }
     };
 
+    const sendTestNotification = async () => {
+        try {
+            console.log('Sending test notification...');
+            await notificationService.sendImmediateNotification('Test Medication', '10mg');
+            setTestSent(true);
+            setTimeout(() => setTestSent(false), 3000);
+            console.log('Test notification sent successfully!');
+        } catch (error) {
+            console.error('Failed to send test notification:', error);
+        }
+    };
+
     if (isLoading) {
         return (
             <View style={styles.container}>
@@ -49,6 +62,16 @@ export default function NotificationSetup({ onComplete }: NotificationSetupProps
                 <Text style={styles.subtitle}>
                     You'll receive reminders for your medications
                 </Text>
+
+                <Pressable
+                    style={[styles.testButton, testSent && styles.testButtonSuccess]}
+                    onPress={sendTestNotification}
+                >
+                    <Ionicons name={testSent ? "checkmark" : "flash-outline"} size={20} color="#fff" />
+                    <Text style={styles.testButtonText}>
+                        {testSent ? "Test Sent!" : "Send Test Notification"}
+                    </Text>
+                </Pressable>
             </View>
         );
     }
@@ -148,5 +171,23 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#FF3B30",
         textAlign: "center",
+    },
+    testButton: {
+        backgroundColor: "#007AFF",
+        paddingHorizontal: 30,
+        paddingVertical: 12,
+        borderRadius: 10,
+        marginTop: 20,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+    testButtonSuccess: {
+        backgroundColor: "#4CAF50",
+    },
+    testButtonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "600",
     },
 });
