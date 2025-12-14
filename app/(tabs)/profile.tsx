@@ -1,14 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useUserStore } from "../../src/store";
+import { notificationService } from "@/src/services/notificationService";
 
 export default function ProfileScreen() {
     const router = useRouter();
     const { t, i18n } = useTranslation();
     const { profile, fetchProfile, isLoading } = useUserStore();
+    const [testSent, setTestSent] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -30,6 +32,23 @@ export default function ProfileScreen() {
         if (profile) {
             const { updateProfile } = useUserStore.getState();
             await updateProfile({ languagePreference: newLang as "en" | "ta" });
+        }
+    };
+
+    const sendTestNotification = async () => {
+        try {
+            console.log('Sending test notification from Profile...');
+            await notificationService.sendImmediateNotification('Test Medication', '10mg');
+            setTestSent(true);
+            setTimeout(() => setTestSent(false), 3000);
+            Alert.alert(
+                t("profile.testNotification") || "Test Sent",
+                t("profile.testNotificationMessage") || "Check your notification tray!"
+            );
+            console.log('Test notification sent successfully!');
+        } catch (error) {
+            console.error('Failed to send test notification:', error);
+            Alert.alert("Error", "Failed to send test notification");
         }
     };
 
@@ -90,6 +109,18 @@ export default function ProfileScreen() {
                         <View style={styles.settingLeft}>
                             <Ionicons name="notifications-outline" size={24} color="#666" />
                             <Text style={styles.settingText}>{t("profile.notifications")}</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#999" />
+                    </Pressable>
+
+                    <View style={styles.divider} />
+
+                    <Pressable style={styles.settingItem} onPress={sendTestNotification}>
+                        <View style={styles.settingLeft}>
+                            <Ionicons name={testSent ? "checkmark-circle" : "flash-outline"} size={24} color={testSent ? "#4CAF50" : "#666"} />
+                            <Text style={styles.settingText}>
+                                {testSent ? "Test Sent!" : "Test Notification"}
+                            </Text>
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#999" />
                     </Pressable>
