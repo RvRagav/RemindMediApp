@@ -81,7 +81,7 @@ export default function EditProfileForm() {
             } else {
                 await createProfile(profileData);
                 Alert.alert("Success", "Profile created successfully", [
-                    { text: "OK", onPress: () => router.back() },
+                    { text: "OK", onPress: () => router.replace("/(tabs)") },
                 ]);
             }
         } catch (error) {
@@ -194,7 +194,19 @@ export default function EditProfileForm() {
                 </Pressable>
 
                 {/* Cancel Button */}
-                <Pressable style={styles.cancelButton} onPress={() => router.back()}>
+                <Pressable
+                    style={styles.cancelButton}
+                    onPress={() => {
+                        if (profile) {
+                            router.back();
+                        } else {
+                            Alert.alert(
+                                "Profile required",
+                                "Please create your profile to continue using the app."
+                            );
+                        }
+                    }}
+                >
                     <Text style={styles.cancelButtonText}>Cancel</Text>
                 </Pressable>
             </View>
