@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "RemindMediApp",
-    "slug": "RemindMediApp",
+    "name": "Nalam Care",
+    "slug": "nalam-care",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "remindmediapp",
+    "icon": "./assets/images/remindericon.png",
+    "scheme": "nalamcare",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -32,7 +32,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./assets/images/remindericon.png",
           "color": "#ffffff"
         }
       ],
