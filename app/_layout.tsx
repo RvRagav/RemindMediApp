@@ -9,6 +9,7 @@ import { database } from "../src/database";
 import { NotificationLogRepository } from "../src/database/repositories";
 import "../src/i18n";
 import { DatabaseProvider } from "../src/providers";
+import { notificationService } from "@/src/services/notificationService";
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -19,6 +20,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -40,8 +43,9 @@ export default function RootLayout() {
       async (notification) => {
         console.log('Notification received:', notification);
 
+        notificationService.playAlarmSound();
         const notificationId = notification.request.identifier;
-        const data = notification.request.content.data;
+        const data = notification.request.content.data as any;
 
         // Create pending log when notification fires
         if (data.scheduleId && data.medicineId && data.scheduledTime) {
@@ -81,7 +85,7 @@ export default function RootLayout() {
         console.log('Notification tapped:', response);
 
         const notificationId = response.notification.request.identifier;
-        const data = response.notification.request.content.data;
+        const data = response.notification.request.content.data as any;
 
         console.log('Notification data:', data);
 

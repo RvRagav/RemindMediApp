@@ -1,3 +1,4 @@
+import { Audio } from 'expo-av';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
@@ -357,6 +358,39 @@ class NotificationService {
     // Add notification received listener (when notification arrives while app is open)
     addNotificationReceivedListener(callback: (notification: Notifications.Notification) => void) {
         return Notifications.addNotificationReceivedListener(callback);
+    }
+
+    // Play alarm sound (separate function for custom alarm sound)
+    async playAlarmSound(): Promise<void> {
+        try {
+            // Set audio mode for alarm playback
+            await Audio.setAudioModeAsync({
+                allowsRecordingIOS: false,
+                playsInSilentModeIOS: true,
+                staysActiveInBackground: true,
+                shouldDuckAndroid: false,
+            });
+
+            const { sound } = await Audio.Sound.createAsync(
+                require('../voice/time_to_take_ur_meds.mp3'),
+                { shouldPlay: true, volume: 1.0 }
+            );
+
+            // Play the sound
+            await sound.playAsync();
+
+            // Stop after 10 seconds
+            setTimeout(async () => {
+                try {
+                    await sound.stopAsync();
+                    await sound.unloadAsync();
+                } catch (err) {
+                    console.log('Error stopping alarm sound:', err);
+                }
+            }, 10000);
+        } catch (err) {
+            console.log('Error playing alarm sound:', err);
+        }
     }
 }
 
