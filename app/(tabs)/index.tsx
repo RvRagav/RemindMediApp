@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { database } from "../../src/database";
@@ -23,22 +23,27 @@ export default function HomeScreen() {
         loadTodayStats();
     }, []);
 
+    // Refresh stats when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            loadTodayStats();
+        }, [])
+    );
+
     const loadTodayStats = async () => {
         try {
             const db = await database.getDatabase();
             if (!db) return;
 
             const repo = new NotificationLogRepository(db);
-            const today = new Date().toISOString().split('T')[0];
 
-            // Get all logs from today
-            const allLogs = await repo.getRecentLogs(100);
-            const todayLogs = allLogs.filter(log =>
-                log.scheduled_time.startsWith(today)
-            );
+            // Get all logs from today using the new method
+            const todayLogs = await repo.getTodayLogs();
 
             const taken = todayLogs.filter(log => log.status === 'taken').length;
             const total = todayLogs.length;
+
+            console.log('📊 Today stats:', { taken, total, todayLogs: todayLogs.length });
 
             setTakenCount(taken);
             setTotalToday(total);

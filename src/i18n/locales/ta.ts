@@ -200,6 +200,7 @@ export const ta = {
             success: "வெற்றி",
             error: "பிழை",
             failedToRecord: "மருந்து நிலையை பதிவு செய்ய முடியவில்லை",
+            tapToRespond: "எடுத்தது அல்லது தவிர்த்தது என குறிக்க தொடவும்",
         },
 
         // Gender

@@ -178,4 +178,24 @@ export class NotificationLogRepository {
             throw error;
         }
     }
+
+    async getTodayLogs(): Promise<NotificationLogWithDetails[]> {
+        try {
+            const logs = await this.db.getAllAsync<NotificationLogWithDetails>(
+                `SELECT 
+          nl.*,
+          m.name as medicine_name,
+          m.dosage as medicine_dosage,
+          m.form as medicine_form
+        FROM notification_logs nl
+        JOIN medicines m ON nl.medicine_id = m.id
+        WHERE date(nl.scheduled_time) = date('now')
+        ORDER BY nl.scheduled_time DESC`
+            );
+            return logs;
+        } catch (error) {
+            console.error('Error getting today notification logs:', error);
+            throw error;
+        }
+    }
 }

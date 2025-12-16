@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     ActivityIndicator,
+    Alert,
     FlatList,
     Pressable,
     RefreshControl,
@@ -57,6 +58,59 @@ export default function NotificationHistory() {
         fetchLogs();
     };
 
+    const handleLogPress = (item: NotificationLogWithDetails) => {
+        // Only allow action if the log is pending
+        if (item.status !== 'pending') {
+            return;
+        }
+
+        Alert.alert(
+            item.medicine_name,
+            `${t('notificationHistory.didYouTake')} ${item.medicine_name}?`,
+            [
+                {
+                    text: t('notificationHistory.skipped'),
+                    style: 'cancel',
+                    onPress: async () => {
+                        await updateLogStatus(item.id, 'skipped');
+                    },
+                },
+                {
+                    text: t('notificationHistory.taken'),
+                    onPress: async () => {
+                        await updateLogStatus(item.id, 'taken');
+                    },
+                },
+            ],
+            { cancelable: false }
+        );
+    };
+
+    const updateLogStatus = async (logId: number, status: 'taken' | 'skipped') => {
+        try {
+            const db = await database.getDatabase();
+            if (!db) {
+                console.error('Database not initialized');
+                return;
+            }
+
+            const repo = new NotificationLogRepository(db);
+            await repo.updateStatus(logId, status);
+
+            Alert.alert(
+                t('notificationHistory.success'),
+                `${t('notificationHistory.markedAs')} ${status}`,
+                [{ text: t('common.ok') }]
+            );
+
+            // Refresh the list
+            fetchLogs();
+        } catch (error) {
+            console.error('Error updating notification log:', error);
+            Alert.alert(t('notificationHistory.error'), t('notificationHistory.failedToRecord'));
+        }
+    };
+
     const formatDateTime = (dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleString('en-US', {
@@ -94,7 +148,11 @@ export default function NotificationHistory() {
     };
 
     const renderItem = ({ item }: { item: NotificationLogWithDetails }) => (
-        <View style={styles.logItem}>
+        <Pressable
+            style={styles.logItem}
+            onPress={() => handleLogPress(item)}
+            disabled={item.status !== 'pending'}
+        >
             <View style={styles.logHeader}>
                 <View style={styles.medicineInfo}>
                     <Text style={styles.medicineName}>{item.medicine_name}</Text>
@@ -129,7 +187,14 @@ export default function NotificationHistory() {
                     </View>
                 )}
             </View>
-        </View>
+
+            {item.status === 'pending' && (
+                <View style={styles.tapHint}>
+                    <Ionicons name="hand-left-outline" size={14} color="#007AFF" />
+                    <Text style={styles.tapHintText}>{t('notificationHistory.tapToRespond')}</Text>
+                </View>
+            )}
+        </Pressable>
     );
 
     const renderEmptyState = () => (
@@ -299,5 +364,20 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#999',
         marginTop: 16,
+    },
+    tapHint: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#e0e0e0',
+    },
+    tapHintText: {
+        fontSize: 12,
+        color: '#007AFF',
+        fontWeight: '500',
     },
 });

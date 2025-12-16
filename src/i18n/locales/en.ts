@@ -200,6 +200,7 @@ export const en = {
             success: "Success",
             error: "Error",
             failedToRecord: "Failed to record medication status",
+            tapToRespond: "Tap to mark as taken or skipped",
         },
 
         // Gender

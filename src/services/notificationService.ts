@@ -363,6 +363,8 @@ class NotificationService {
     // Play alarm sound (separate function for custom alarm sound)
     async playAlarmSound(): Promise<void> {
         try {
+            console.log('🔊 Starting alarm sound playback...');
+
             // Set audio mode for alarm playback
             await Audio.setAudioModeAsync({
                 allowsRecordingIOS: false,
@@ -371,25 +373,33 @@ class NotificationService {
                 shouldDuckAndroid: false,
             });
 
+            console.log('🔊 Audio mode set, loading sound file...');
+
             const { sound } = await Audio.Sound.createAsync(
                 require('../voice/time_to_take_ur_meds.mp3'),
                 { shouldPlay: true, volume: 1.0 }
             );
 
+            console.log('🔊 Sound loaded, playing...');
+
             // Play the sound
             await sound.playAsync();
+
+            console.log('✅ Alarm sound playing! Will stop in 10 seconds.');
 
             // Stop after 10 seconds
             setTimeout(async () => {
                 try {
                     await sound.stopAsync();
                     await sound.unloadAsync();
+                    console.log('🔇 Alarm sound stopped and unloaded');
                 } catch (err) {
-                    console.log('Error stopping alarm sound:', err);
+                    console.log('❌ Error stopping alarm sound:', err);
                 }
             }, 10000);
         } catch (err) {
-            console.log('Error playing alarm sound:', err);
+            console.log('❌ Error playing alarm sound:', err);
+            console.error('Detailed error:', err);
         }
     }
 }
